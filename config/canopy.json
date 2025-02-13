@@ -1,0 +1,20 @@
+{
+  "collection": "https://micahchoo.github.io/bhc-demo-tropy/index.json",
+  "devCollection": "https://micahchoo.github.io/bhc-demo-tropy/index.json",
+  "featured": [
+    "https://example.org/manifest-1.json",
+    "https://example.org/manifest-2.json"
+  ],
+  "metadata": ["Date", "Subject"],
+  "label": { "none": ["Collection Title"] },
+  "summary": {
+    "none": ["Brief description of the site and its contents."]
+  },
+  "theme": {
+    "defaultTheme": "light",
+    "accentColor": "red",
+    "grayColor": "mauve",
+    "radius": "small",
+    "scaling": "100%"
+  }
+}
