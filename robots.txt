@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://micahchoo.github.io/bhc-demo-canopy
+
+# Sitemaps
+Sitemap: https://micahchoo.github.io/bhc-demo-canopy/sitemap.xml
