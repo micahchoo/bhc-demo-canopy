@@ -1,9 +1,9 @@
 {
-  "collection": "https://example.org/iiif/collection.json",
-  "devCollection": "https://example.org/iiif/collection-small-sample.json",
+  "collection": "https://micahchoo.github.io/bhc-demo-tropy/index.json",
+  "devCollection": "https://micahchoo.github.io/bhc-demo-tropy/index.json",
   "featured": [
-    "https://example.org/manifest-1.json",
-    "https://example.org/manifest-2.json"
+    "https://micahchoo.github.io/bhc-demo-tropy/bhc001_hakeem_abdul20170705_pn02/manifest.json",
+    "https://micahchoo.github.io/bhc-demo-tropy/bhc001_bid_laxmibai_af_01/manifest.json"
   ],
   "metadata": ["Date", "Subject"],
   "label": { "none": ["Collection Title"] },
