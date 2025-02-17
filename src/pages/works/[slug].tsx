@@ -1,11 +1,22 @@
 import { CanopyEnvironment } from "@customTypes/canopy";
+
+interface Facets {
+  [key: string]: any;
+}
+declare const FACETS: Facets;
 import FACETS from "@.canopy/facets.json";
+
+interface Manifests {
+  [key: string]: any;
+}
+declare const MANIFESTS: Manifests;
 import MANIFESTS from "@.canopy/manifests.json";
 import { Manifest } from "@iiif/presentation-3";
 import { type NavigationItem } from "@src/customTypes/navigation";
+import axios from "axios";
 import Related from "@components/Related/Related";
 import { buildManifestSEO } from "@lib/seo";
-import { fetch } from "@iiif/vault-helpers/fetch";
+import fetch from "@iiif/vault-helpers/fetch";
 import { getReferencingContent } from "@src/lib/content/reference/server";
 import { shuffle } from "lodash";
 import LayoutsWork from "@src/components/Layouts/Work";
@@ -19,10 +30,12 @@ import WorkViewer from "@src/components/Work/Viewer";
 import WorkScroll from "@src/components/Work/Scroll";
 import WorkReferencingContent from "@src/components/Work/ReferencingContent";
 import WorkRequiredStatement from "@src/components/Work/RequiredStatement";
+import Media from "@components/Media/Media";
 import WorkLinkingProperty from "@components/Work/LinkingProperty";
 
 interface WorkProps {
-  manifest: Manifest;
+  manifest: import("@iiif/presentation-3").Manifest | null;
+  mediaMetadata: any | null;
   related: any;
   referencingContent: NavigationItem[];
   source: any;
@@ -30,16 +43,32 @@ interface WorkProps {
 
 export default function WorkPage({
   manifest,
+  mediaMetadata,
   referencingContent,
   related,
   source,
-}: WorkProps) {
+}: WorkProps): JSX.Element {
+  if (mediaMetadata) {
+    return (
+      <Media
+        title={mediaMetadata.title}
+        description={mediaMetadata.description}
+        thumbnail={mediaMetadata.thumbnail}
+        id={mediaMetadata.id}
+      />
+    );
+  }
+
+  if (!manifest) {
+    return <div>Manifest not found</div>;
+  }
+
   const { id, homepage, label, metadata, rendering, requiredStatement, partOf, seeAlso, summary } = manifest;
   const Work = () => <></>;
 
   Work.ManifestId = () => <WorkManifestId manifestId={id} />;
   Work.Metadata = () => <WorkMetadata metadata={metadata} />;
-  Work.LinkingProperty = (props) => <WorkLinkingProperty {...props} homepage={homepage} partOf={partOf} rendering={rendering} seeAlso={seeAlso} />;
+  Work.LinkingProperty = (props: any) => <WorkLinkingProperty {...props} homepage={homepage} partOf={partOf} rendering={rendering} seeAlso={seeAlso} />;
   Work.RequiredStatement = () => (
     <WorkRequiredStatement requiredStatement={requiredStatement} />
   );
@@ -47,10 +76,10 @@ export default function WorkPage({
   Work.ReferencingContent = () => (
     <WorkReferencingContent referencingContent={referencingContent} />
   );
-  Work.Scroll = (props) => <WorkScroll {...props} iiifContent={id} />;
-  Work.Summary = (props) => <WorkSummary {...props} summary={summary} />;
-  Work.Title = (props) => <WorkTitle {...props} label={label} />;
-  Work.Viewer = (props) => <WorkViewer {...props} iiifContent={id} />;
+  Work.Scroll = (props: any) => <WorkScroll {...props} iiifContent={id} />;
+  Work.Summary = () => <WorkSummary summary={summary} />;
+  Work.Title = () => <WorkTitle label={label} />;
+  Work.Viewer = () => <WorkViewer iiifContent={id} />;
 
   return (
     <LayoutsWork>
@@ -64,18 +93,44 @@ export async function getStaticProps({ params }: { params: any }) {
     ?.CANOPY_CONFIG as unknown as CanopyEnvironment;
   const baseUrl = basePath ? `${url}${basePath}` : url;
 
+let manifest: import("@iiif/presentation-3").Manifest | null = null;
+  let mediaMetadata: any | null = null;
   const { id, index } = MANIFESTS.find(
-    (item) => item.slug === params.slug
+    (item: any) => item.slug === params.slug
   ) as any;
-  const manifest = (await fetch(id)) as Manifest;
+
+  try {
+    const mediaResponse = await axios.get(
+      "https://micahchoo.github.io/bhc-demo-tropy/audio-demo/media.json"
+    );
+    const mediaData = mediaResponse.data;
+
+    const mediaItem = mediaData.find((item: any) => item.slug === params.slug);
+
+    if (mediaItem) {
+      mediaMetadata = mediaItem;
+    } else {
+      manifest = (await fetch(id)) as Manifest;
+    }
+  } catch (error) {
+    console.error("Error fetching media.json:", error);
+    manifest = (await fetch(id)) as Manifest;
+  }
+
+  if (!manifest && !mediaMetadata) {
+    console.error("No manifest or media metadata found for slug:", params.slug);
+    return {
+      notFound: true,
+    };
+  }
 
   /**
    * build the seo object
    */
-  const seo = await buildManifestSEO(manifest, `/works/${params.slug}`);
-  const related = FACETS.map((facet) => {
+  const seo = await buildManifestSEO(manifest?.id, `/works/${params.slug}`);
+  const related = FACETS.map((facet: any) => {
     const value = shuffle(
-      facet.values.filter((entry) => entry.docs.includes(index))
+      facet.values.filter((entry: any) => entry.docs.includes(index))
     );
     return `${baseUrl}/api/facet/${facet.slug}/${value[0]?.slug}.json?sort=random`;
   });
@@ -84,7 +139,7 @@ export async function getStaticProps({ params }: { params: any }) {
    * Find connected NextJS pages which reference this manifest
    */
   const referencingContent = await getReferencingContent({
-    manifestId: manifest.id,
+    manifestId: manifest?.id,
     // Directories in which to look for markdown files with frontmatter content
     srcDir: ["content"],
   });
@@ -97,20 +152,45 @@ export async function getStaticProps({ params }: { params: any }) {
   /**
    * scrub the manifest of any provider property
    */
-  delete manifest.provider;
+  delete manifest?.provider;
 
   return {
-    props: { manifest, related, seo, referencingContent, source, frontMatter },
+    props: {
+      manifest: manifest || null,
+      mediaMetadata: mediaMetadata || null,
+      related,
+      seo,
+      referencingContent,
+      source,
+      frontMatter,
+    },
   };
 }
 
 export async function getStaticPaths() {
-  const paths = MANIFESTS.map((item) => ({
-    params: { ...item },
+  const paths = MANIFESTS.map((item: any) => ({
+    params: { slug: item.slug },
   }));
 
-  return {
-    paths: paths,
-    fallback: false,
-  };
+  try {
+    const mediaResponse = await axios.get(
+      "https://micahchoo.github.io/bhc-demo-tropy/audio-demo/media.json"
+    );
+    const mediaData = mediaResponse.data;
+
+    const mediaPaths = mediaData.map((item: any) => ({
+      params: { slug: item.slug },
+    }));
+
+    return {
+      paths: [...paths, ...mediaPaths],
+      fallback: false,
+    };
+  } catch (error) {
+    console.error("Error fetching media.json:", error);
+    return {
+      paths: paths,
+      fallback: false,
+    };
+  }
 }
