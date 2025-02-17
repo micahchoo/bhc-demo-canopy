@@ -166,10 +166,6 @@ let manifest: import("@iiif/presentation-3").Manifest | null = null;
 }
 
 export async function getStaticPaths() {
-  const paths = MANIFESTS.map((item: any) => ({
-    params: { slug: item.slug },
-  }));
-
   try {
     const mediaResponse = await axios.get(
       "https://micahchoo.github.io/bhc-demo-tropy/audio-demo/media.json"
@@ -181,13 +177,13 @@ export async function getStaticPaths() {
     }));
 
     return {
-      paths: [...paths, ...mediaPaths],
+      paths: mediaPaths,
       fallback: false,
     };
   } catch (error) {
     console.error("Error fetching media.json:", error);
     return {
-      paths: paths,
+      paths: [],
       fallback: false,
     };
   }
