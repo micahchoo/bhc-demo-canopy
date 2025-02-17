@@ -2,9 +2,10 @@ require("dotenv").config();
 const buildConfig = require("./src/lib/build/config");
 const aggregate = require("./src/lib/build/aggregate");
 
+const axios = require("axios");
 const args = process.argv;
 
-(() => {
+(async () => {
   const path = args
     .find((value) => value.includes("--path="))
     ?.split("=")
@@ -18,6 +19,17 @@ const args = process.argv;
   const baseUrl = basePath ? `${url}${basePath}` : url;
   const assetPrefix = basePath;
 
+  try {
+    const mediaResponse = await axios.get(
+      "https://micahchoo.github.io/bhc-demo-tropy/audio-demo/media.json"
+    );
+    const mediaData = mediaResponse.data;
+
+    config.media = mediaData;
+  } catch (error) {
+    console.error("Error fetching media.json:", error);
+  }
+
   const env = {
     CANOPY_CONFIG: {
       ...config,
@@ -28,5 +40,6 @@ const args = process.argv;
     },
   };
 
-  aggregate.build(env.CANOPY_CONFIG);
+  console.log("CANOPY_CONFIG", env.CANOPY_CONFIG);
+  aggregate.build(env.CANOPY_CONFIG, config.media);
 })();

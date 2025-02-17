@@ -1,17 +1,17 @@
-const { getLabel, getEntries } = require("../iiif/label");
+const { getLabel } = require("../iiif/label");
 
-exports.buildIndexData = (manifests) => {
-  return manifests.map((manifest) => {
-    const { index, label, summary, metadata } = manifest;
+exports.buildIndexData = (items) => {
+  return items.map((item) => {
+    const { index, label, summary, metadata } = item;
     return {
       id: index,
-      ...(label && { label: getLabel(label).join(" ") }),
-      ...(summary && { summary: getLabel(summary).join(" ") }),
-      ...(metadata && {
-        metadata: metadata
-          .map((entry) => getEntries(entry.value).join(" "))
-          .join(" "),
-      }),
+      label: typeof label === 'string' ? label : getLabel(label).join(" "),
+      summary: typeof summary === 'string' ? summary : getLabel(summary).join(" "),
+      metadata: metadata
+        ? metadata
+            .map((entry) => entry.value)
+            .join(" ")
+        : "",
     };
   });
 };

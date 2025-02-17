@@ -9,7 +9,7 @@ const { buildFacets } = require("./facets");
 const fs = require("fs").promises;
 const fsSync = require("fs");
 
-module.exports.build = async (env) => {
+module.exports.build = async (env, media) => {
   const { baseUrl } = env;
   const canopyDirectory = ".canopy";
 
@@ -104,37 +104,54 @@ module.exports.build = async (env) => {
   let canopyMetadata = [];
   let canopySearch = [];
 
-  manifests
-    .filter((manifest) => manifest?.type === "Manifest")
-    .forEach((manifest) => {
-      const settings = env?.search?.index;
-      canopySearch.push({
-        index: manifest.index,
-        label: manifest?.label,
-        ...(settings?.summary?.enabled && { summary: manifest.summary }),
-        ...(settings?.metadata?.enabled && {
-          metadata: manifest.metadata.filter((entry) =>
-            settings.metadata.all
-              ? entry
-              : env.metadata.includes(getEntries(entry.label)[0])
-          ),
-        }),
-      });
+  if (manifests && manifests.length > 0) {
+    manifests
+      .filter((manifest) => manifest?.type === "Manifest")
+      .forEach((manifest) => {
+        const settings = env?.search?.index;
+        canopySearch.push({
+          index: manifest.index,
+          label: manifest?.label,
+          ...(settings?.summary?.enabled && { summary: manifest.summary }),
+          ...(settings?.metadata?.enabled && {
+            metadata: manifest.metadata.filter((entry) =>
+              settings.metadata.all
+                ? entry
+                : env.metadata.includes(getEntries(entry.label)[0])
+            ),
+          }),
+        });
 
-      manifest.metadata.forEach((metadata) => {
-        const metadataLabel = getEntries(metadata.label)[0];
-        const metadataValues = getEntries(metadata.value);
-        if (env?.metadata?.includes(metadataLabel)) {
-          metadataValues.forEach((value) => {
-            canopyMetadata.push({
-              index: manifest.index,
-              label: metadataLabel,
-              value,
+        manifest.metadata.forEach((metadata) => {
+          const metadataLabel = getEntries(metadata.label)[0];
+          const metadataValues = getEntries(metadata.value);
+          if (env?.metadata?.includes(metadataLabel)) {
+            metadataValues.forEach((value) => {
+              canopyMetadata.push({
+                index: manifest.index,
+                label: metadataLabel,
+                value,
+              });
             });
-          });
-        }
+          }
+        });
+      });
+  }
+
+  if (media && media.length > 0) {
+    media.forEach((item, index) => {
+      canopySearch.push({
+        index: index + canopyManifests.length,
+        label: item.title,
+        summary: item.description,
+        metadata: [
+          { label: "Collection", value: item.metadata.Collection },
+          { label: "Sub-Collection", value: item.metadata["Sub-Collection"] },
+          { label: "Contributor", value: item.metadata.Contributor },
+        ],
       });
     });
+  }
 
   log(`\nCreating facets as IIIF Collections...\n`);
   const canopyFacets = await buildFacets(
