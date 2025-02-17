@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://micahchoo.github.io/bhc-demo-canopy
+Host: https://canopy-iiif.github.io/canopy-iiif
 
 # Sitemaps
-Sitemap: https://micahchoo.github.io/bhc-demo-canopy/sitemap.xml
+Sitemap: https://canopy-iiif.github.io/canopy-iiif/sitemap.xml
