@@ -4,13 +4,11 @@ interface Facets {
   [key: string]: any;
 }
 declare const FACETS: Facets;
-import FACETS from "@.canopy/facets.json";
 
 interface Manifests {
   [key: string]: any;
 }
 declare const MANIFESTS: Manifests;
-import MANIFESTS from "@.canopy/manifests.json";
 import { Manifest } from "@iiif/presentation-3";
 import { type NavigationItem } from "@src/customTypes/navigation";
 import axios from "axios";
